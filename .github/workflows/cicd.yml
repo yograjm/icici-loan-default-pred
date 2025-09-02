@@ -53,7 +53,7 @@ jobs:
     - name: Install dependencies                 # Install Test req.
       run: pip install -r loan_defaulter_pred/requirements/test_requirements.txt
     - name: Test with pytest
-      run: pytest
+      run: cd loan_defaulter_pred && pytest
 
 
   push-image:
@@ -82,7 +82,7 @@ jobs:
     - name: Build the Docker image for Fastapi app
       env:
         DOCKER_USER: ${{ secrets.DOCKER_USER_NAME }}
-      run: docker build . -f Dockerfile -t $DOCKER_USER/loan_default_pred:latest
+      run: cd loan_defaulter_pred && docker build . -f Dockerfile -t $DOCKER_USER/loan_default_pred:latest
 
     - name: Push the Docker Image
       env:
