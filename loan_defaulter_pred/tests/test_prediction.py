@@ -6,8 +6,14 @@
 
 import sys
 from pathlib import Path
+
+# Get the current file path as a Path object
 filepath = Path(__file__)
+
+# Add the parent directory (2 levels up) of the current file to Python's sys.path
+# This allows you to import modules/packages from that parent directory
 sys.path.append(str(filepath.parents[1]))
+
 
 
 from predict import rf_model, make_prediction, sample_input_df
@@ -26,7 +32,7 @@ def test_model_accuracy():
 def test_f1_score():
     pred = rf_model.predict(X_test)
     f1 = f1_score(pred, y_test)
-    assert f1 > 0.8, "Model F1-score is below 0.8"
+    assert f1 > 1, "Model F1-score is below 0.8"
 
 
 
