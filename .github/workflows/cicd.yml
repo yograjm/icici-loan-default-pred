@@ -20,12 +20,12 @@ jobs:
       run: pip install -r loan_defaulter_pred/requirements/requirements.txt      # install training req.
     - name: Train model
       run: python loan_defaulter_pred/train_model.py      # Run training script
-    - uses: actions/upload-artifact@v2      # Upload the trained model pkl file as an Artifact, to share with other jobs 
+    - uses: actions/upload-artifact@v3      # Upload the trained model pkl file as an Artifact, to share with other jobs 
       with:
         name: my-trained-model
         path: loan_defaulter_pred/trained_model/rf_model_loan_default_pred.pkl
         retention-days: 1
-    - uses: actions/upload-artifact@v2      # Upload the LabelEncoder pkl file as an Artifact, to share with other jobs 
+    - uses: actions/upload-artifact@v3      # Upload the LabelEncoder pkl file as an Artifact, to share with other jobs 
       with:
         name: my-label-encoder
         path: loan_defaulter_pred/trained_model/loan_intent_encoder.pkl
@@ -42,11 +42,11 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: '3.10'
-    - uses: actions/download-artifact@v2     # Download the model artifact
+    - uses: actions/download-artifact@v3     # Download the model artifact
       with:
         name: my-trained-model
         path: loan_defaulter_pred/trained_model
-    - uses: actions/download-artifact@v2     # Download the label-encoder artifact
+    - uses: actions/download-artifact@v3     # Download the label-encoder artifact
       with:
         name: my-label-encoder
         path: loan_defaulter_pred/trained_model
@@ -63,12 +63,12 @@ jobs:
     - name: Repo Checkout
       uses: actions/checkout@v3
 
-    - uses: actions/download-artifact@v2     # Download the model artifact
+    - uses: actions/download-artifact@v3     # Download the model artifact
       with:
         name: my-trained-model
         path: loan_defaulter_pred/trained_model
 
-    - uses: actions/download-artifact@v2     # Download the label-encoder artifact
+    - uses: actions/download-artifact@v3     # Download the label-encoder artifact
       with:
         name: my-label-encoder
         path: loan_defaulter_pred/trained_model
