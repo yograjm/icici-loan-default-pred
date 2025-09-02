@@ -49,3 +49,26 @@ Login to DockerHub
 `docker push <YOUR-DOCKER-USERNAME>/loan_default_pred`
 
 
+
+## CICD using GitHub Actions
+
+Create folder at the root of the repository: `/.github/workflows`
+
+Create YML file inside that folder: `/.github/workflows/cicd.yml`
+
+Add DockerHub Username and PassToken to GitHub Secrets:
+
+Settings >> Secrets and variables >> Actions >> Repository secrets >> add secrets
+
+Configure a New Codesapce as a GitHub Runner
+  >> Create a new Blank Codespace
+  >> Check commands in Settings >> Actions >> Runner >> New self-hoster runner
+  >> Execute the commands on Codespace
+  >> Put `&` sign for this last commend: `./run.sh &`
+
+Commit and push the changes
+
+CICD Workflow should start
+
+APP should be running on Codesapce(runner)
+

@@ -1,0 +1,113 @@
+name: CICD Pipeline
+on:
+  push:
+    branches:
+      - main             # to run the workflow whenever there is a git push on `main` branch
+  workflow_dispatch:     # to run the workflow from UI
+
+jobs:
+  train:
+    runs-on: ubuntu-latest     # Runner provided by GitHub
+    strategy:
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v3          # Checkput action --> Do `git pull`  on Runner
+    - name: Set up Python 3.10           # Set up Python in Runner
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.10'
+    - name: Install dependencies
+      run: pip install -r loan_defaulter_pred/requirements/requirements.txt      # install training req.
+    - name: Train model
+      run: python loan_defaulter_pred/train_model.py      # Run training script
+    - uses: actions/upload-artifact@v2      # Upload the trained model pkl file as an Artifact, to share with other jobs 
+      with:
+        name: my-trained-model
+        path: loan_defaulter_pred/trained_model/rf_model_loan_default_pred.pkl
+        retention-days: 1
+    - uses: actions/upload-artifact@v2      # Upload the LabelEncoder pkl file as an Artifact, to share with other jobs 
+      with:
+        name: my-label-encoder
+        path: loan_defaulter_pred/trained_model/loan_intent_encoder.pkl
+        retention-days: 1
+
+  test:
+    needs: train      # depends on train job; will run only after the `train` runs
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.10'
+    - uses: actions/download-artifact@v2     # Download the model artifact
+      with:
+        name: my-trained-model
+        path: loan_defaulter_pred/trained_model
+    - uses: actions/download-artifact@v2     # Download the label-encoder artifact
+      with:
+        name: my-label-encoder
+        path: loan_defaulter_pred/trained_model
+    - name: Install dependencies                 # Install Test req.
+      run: pip install -r loan_defaulter_pred/requirements/test_requirements.txt
+    - name: Test with pytest
+      run: pytest
+
+
+  push-image:
+    needs: [train, test]      # depends on the both `train` & `test` jobs
+    runs-on: ubuntu-latest
+    steps:
+    - name: Repo Checkout
+      uses: actions/checkout@v3
+
+    - uses: actions/download-artifact@v2     # Download the model artifact
+      with:
+        name: my-trained-model
+        path: loan_defaulter_pred/trained_model
+
+    - uses: actions/download-artifact@v2     # Download the label-encoder artifact
+      with:
+        name: my-label-encoder
+        path: loan_defaulter_pred/trained_model
+
+    - name: Login to Docker hub
+      env:
+        DOCKER_USER: ${{ secrets.DOCKER_USER_NAME }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASS_TOKEN }}
+      run: docker login -u $DOCKER_USER -p $DOCKER_PASSWORD 
+
+    - name: Build the Docker image for Fastapi app
+      env:
+        DOCKER_USER: ${{ secrets.DOCKER_USER_NAME }}
+      run: docker build . -f Dockerfile -t $DOCKER_USER/loan_default_pred:latest
+
+    - name: Push the Docker Image
+      env:
+        DOCKER_USER: ${{ secrets.DOCKER_USER_NAME }}
+      run: docker push $DOCKER_USER/loan_default_pred
+
+    - name: Logout to Docker hub
+      run: docker logout
+
+
+  deploy:
+    needs: [train, test, push-image]
+    runs-on: self-hosted                   # Will run on Self-hosted Runner eg. EC2, Codespaces
+
+    steps:
+      - name: Pull Docker Image
+        env: 
+          DOCKER_USER: ${{ secrets.DOCKER_USER_NAME }}
+        run: docker pull $DOCKER_USER/loan_default_pred:latest
+    
+      - name: Delete Old Docker Container
+        run: docker rm -f myapp || true
+    
+      - name: Run Docker Container
+        env: 
+          DOCKER_USER: ${{ secrets.DOCKER_USER_NAME }}
+        run: docker run -it -d -p 7860:7860 -p 8080:8080 --name myapp $DOCKER_USER/loan_default_pred:latest
+
