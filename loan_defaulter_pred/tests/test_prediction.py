@@ -32,7 +32,7 @@ def test_model_accuracy():
 def test_f1_score():
     pred = rf_model.predict(X_test)
     f1 = f1_score(pred, y_test)
-    assert f1 > 1, "Model F1-score is below 0.8"
+    assert f1 > 0.8, "Model F1-score is below 0.8"
 
 
 
